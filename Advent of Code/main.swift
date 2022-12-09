@@ -13,27 +13,84 @@ func main() {
     let lines = inputString.components(separatedBy: "\n")
         .filter { !$0.isEmpty }
     
-    // Sample algorithm
-    var scoreboard = [String: Int]()
+    var visitedSquares: Set<String> = ["0,0"]
+    var headX = 0
+    var headY = 0
+    var tailX = 0
+    var tailY = 0
+    
     lines.forEach { line in
-        let (name, score) = parseLine(line)
-        scoreboard[name] = score
+        let (direction, steps) = parseLine(line)
+//        print(direction, steps)
+        
+        for _ in 0..<steps {
+            switch direction {
+            case .up:
+                headY += 1
+            case .down:
+                headY -= 1
+            case .left:
+                headX -= 1
+            case .right:
+                headX += 1
+            }
+            
+            if headX - tailX > 1 {
+                tailX += 1
+                if headY - tailY > 0 {
+                    tailY += 1
+                } else if headY - tailY < 0 {
+                    tailY -= 1
+                }
+            }
+            if headY - tailY > 1 {
+                tailY += 1
+                if headX - tailX > 0 {
+                    tailX += 1
+                } else if headX - tailX < 0 {
+                    tailX -= 1
+                }
+            }
+            
+            if headX - tailX < -1 {
+                tailX -= 1
+                if headY - tailY > 0 {
+                    tailY += 1
+                } else if headY - tailY < 0 {
+                    tailY -= 1
+                }
+            }
+            if headY - tailY < -1 {
+                tailY -= 1
+                if headX - tailX > 0 {
+                    tailX += 1
+                } else if headX - tailX < 0 {
+                    tailX -= 1
+                }
+            }
+            
+//            print("\nHEAD: ", headX, headY)
+//            print("TAIL: ", tailX, tailY)
+            visitedSquares.insert("\(tailX),\(tailY)")
+        }
     }
-    scoreboard
-        .sorted { lhs, rhs in
-            lhs.value > rhs.value
-        }
-        .forEach { name, score in
-            print("\(name) \(score) pts")
-        }
+    
+    print(visitedSquares.count)
 }
 
-func parseLine(_ line: String) -> (name: String, score: Int) {
-    let helper = RegexHelper(pattern: #"([\-\w]*)\s(\d+)"#)
-    let result = helper.parse(line)
-    let name = result[0]
-    let score = Int(result[1])!
-    return (name: name, score: score)
+enum Direction: String {
+    case up = "U"
+    case down = "D"
+    case left = "L"
+    case right = "R"
 }
 
+func parseLine(_ line: String) -> (direction: Direction, steps: Int) {
+    let results = line.components(separatedBy: .whitespaces)
+    return (Direction(rawValue: results[0])!, Int(results[1])!)
+}
+
+let startTime = Date()
 main()
+let timeElapsed = Date().timeIntervalSince(startTime) * 1000
+print("elapsed: \(timeElapsed)ms")
