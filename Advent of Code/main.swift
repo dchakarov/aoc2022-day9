@@ -4,7 +4,6 @@
 //
 
 import Foundation
-import RegexHelper
 
 func main() {
     let fileUrl = URL(fileURLWithPath: "./aoc-input")
@@ -13,6 +12,11 @@ func main() {
     let lines = inputString.components(separatedBy: "\n")
         .filter { !$0.isEmpty }
     
+    solve1(lines: lines)
+    solve2(lines: lines)
+}
+
+func solve1(lines: [String]) {
     var visitedSquares: Set<String> = ["0,0"]
     var headX = 0
     var headY = 0
@@ -21,7 +25,6 @@ func main() {
     
     lines.forEach { line in
         let (direction, steps) = parseLine(line)
-//        print(direction, steps)
         
         for _ in 0..<steps {
             switch direction {
@@ -35,47 +38,99 @@ func main() {
                 headX += 1
             }
             
-            if headX - tailX > 1 {
-                tailX += 1
-                if headY - tailY > 0 {
-                    tailY += 1
-                } else if headY - tailY < 0 {
-                    tailY -= 1
-                }
-            }
-            if headY - tailY > 1 {
-                tailY += 1
-                if headX - tailX > 0 {
-                    tailX += 1
-                } else if headX - tailX < 0 {
-                    tailX -= 1
-                }
-            }
+            let newPos = calc(knot2: (x: tailX, y: tailY), basedOn: (x: headX, y: headY))
+            tailX = newPos.x
+            tailY = newPos.y
             
-            if headX - tailX < -1 {
-                tailX -= 1
-                if headY - tailY > 0 {
-                    tailY += 1
-                } else if headY - tailY < 0 {
-                    tailY -= 1
-                }
-            }
-            if headY - tailY < -1 {
-                tailY -= 1
-                if headX - tailX > 0 {
-                    tailX += 1
-                } else if headX - tailX < 0 {
-                    tailX -= 1
-                }
-            }
-            
-//            print("\nHEAD: ", headX, headY)
-//            print("TAIL: ", tailX, tailY)
             visitedSquares.insert("\(tailX),\(tailY)")
         }
     }
     
     print(visitedSquares.count)
+
+}
+
+func calc(knot2: (x: Int, y: Int), basedOn knot: (x: Int, y: Int)) -> (x: Int, y: Int) {
+    var newPos = knot2
+    if knot.x - knot2.x > 1 {
+        newPos.x += 1
+        if knot.y - knot2.y > 0 {
+            newPos.y += 1
+        } else if knot.y - knot2.y < 0 {
+            newPos.y -= 1
+        }
+    } else if knot.y - knot2.y > 1 {
+        newPos.y += 1
+        if knot.x - knot2.x > 0 {
+            newPos.x += 1
+        } else if knot.x - knot2.x < 0 {
+            newPos.x -= 1
+        }
+    } else if knot.x - knot2.x < -1 {
+        newPos.x -= 1
+        if knot.y - knot2.y > 0 {
+            newPos.y += 1
+        } else if knot.y - knot2.y < 0 {
+            newPos.y -= 1
+        }
+    } else if knot.y - knot2.y < -1 {
+        newPos.y -= 1
+        if knot.x - knot2.x > 0 {
+            newPos.x += 1
+        } else if knot.x - knot2.x < 0 {
+            newPos.x -= 1
+        }
+    }
+    return newPos
+}
+
+func solve2(lines: [String]) {
+    var visitedSquares: Set<String> = ["0,0"]
+    
+    var knots: [(x: Int, y: Int)] = []
+    for _ in 0..<10 {
+        knots.append((x: 0, y: 0))
+    }
+    
+    lines.forEach { line in
+        let (direction, steps) = parseLine(line)
+        for _ in 0..<steps {
+            switch direction {
+            case .up:
+                knots[0].y += 1
+            case .down:
+                knots[0].y -= 1
+            case .left:
+                knots[0].x -= 1
+            case .right:
+                knots[0].x += 1
+            }
+            
+            for i in 1..<10 {
+                knots[i] = calc(knot2: knots[i], basedOn: knots[i-1])
+            }
+
+            visitedSquares.insert("\(knots[9].x),\(knots[9].y)")
+        }
+    }
+    
+    print(visitedSquares.count)
+    
+}
+
+func printGrid(rows: Int, cols: Int, knots: [(x: Int, y: Int)]) {
+    for row in 0..<rows {
+        var rowString = ""
+        for col in 0..<cols {
+            if let index = knots.firstIndex(where: { $0.x == col && $0.y == row }) {
+                let knot = index == 0 ? "H" : "\(index)"
+                rowString += knot
+            } else {
+                rowString += "."
+            }
+        }
+        print(rowString)
+    }
 }
 
 enum Direction: String {
